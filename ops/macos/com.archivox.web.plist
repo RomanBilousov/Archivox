@@ -17,9 +17,9 @@
     <key>EnvironmentVariables</key>
     <dict>
       <key>PATH</key>
-      <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+      <string>__ARCHIVOX_PATH__</string>
       <key>UV_BIN</key>
-      <string>/opt/homebrew/bin/uv</string>
+      <string>__ARCHIVOX_UV_BIN__</string>
     </dict>
 
     <key>RunAtLoad</key>

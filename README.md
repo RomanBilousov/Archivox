@@ -3,6 +3,36 @@
 Archivox is a local-first media transcription tool for long-form video archives,
 course libraries, internal trainings, and private media folders.
 
+## One-command install
+
+Install Archivox, set up dependencies, start the local web app, and open it in
+your browser:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/RomanBilousov/Archivox/main/scripts/install.sh | bash
+```
+
+What this does:
+
+- installs `uv` if it is missing
+- clones or updates the repo in a sensible local app directory
+- runs `uv sync`
+- starts Archivox in the background
+- opens `http://127.0.0.1:8420`
+
+Useful variants:
+
+```bash
+# Install but do not start
+curl -fsSL https://raw.githubusercontent.com/RomanBilousov/Archivox/main/scripts/install.sh | ARCHIVOX_START_MODE=none bash
+
+# Install and keep it in a custom folder
+curl -fsSL https://raw.githubusercontent.com/RomanBilousov/Archivox/main/scripts/install.sh | ARCHIVOX_INSTALL_DIR="$HOME/Archivox" bash
+
+# Install and also create the macOS launcher app
+curl -fsSL https://raw.githubusercontent.com/RomanBilousov/Archivox/main/scripts/install.sh | ARCHIVOX_INSTALL_LAUNCHER_APP=1 bash
+```
+
 The workflow is simple:
 
 - choose a local folder or external drive path;
@@ -78,6 +108,12 @@ Service metadata is stored under:
 3. Open `http://127.0.0.1:8420`
 4. Select or paste a folder path
 5. Scan the folder and create a job
+
+If you already cloned the repo manually and just want the same local setup flow:
+
+```bash
+./scripts/install.sh
+```
 
 ## CLI usage
 

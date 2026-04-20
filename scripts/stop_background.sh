@@ -18,6 +18,15 @@ fi
 
 if kill -0 "$PID" >/dev/null 2>&1; then
   kill "$PID"
+  for _ in {1..10}; do
+    if ! kill -0 "$PID" >/dev/null 2>&1; then
+      break
+    fi
+    sleep 0.5
+  done
+  if kill -0 "$PID" >/dev/null 2>&1; then
+    kill -9 "$PID" >/dev/null 2>&1 || true
+  fi
   echo "Stopped Archivox PID $PID"
 else
   echo "Archivox PID file existed, but process was already gone"

@@ -3,23 +3,14 @@ set -euo pipefail
 
 PID_FILE="/tmp/archivox-web.pid"
 PORT="${ARCHIVOX_PORT:-8420}"
-PID=""
+LISTENER_PID="$(lsof -tiTCP:"$PORT" -sTCP:LISTEN 2>/dev/null | head -n 1 || true)"
 
-if [[ -f "$PID_FILE" ]]; then
-  PID="$(cat "$PID_FILE")"
-  if kill -0 "$PID" >/dev/null 2>&1; then
-    echo "Archivox is running on PID $PID"
-    echo "Open: http://127.0.0.1:$PORT"
-    exit 0
-  fi
-fi
-
-PID="$(lsof -tiTCP:"$PORT" -sTCP:LISTEN 2>/dev/null | head -n 1 || true)"
-if [[ -n "$PID" ]]; then
-  echo "$PID" >"$PID_FILE"
-  echo "Archivox is running on PID $PID"
+if [[ -n "$LISTENER_PID" ]]; then
+  echo "$LISTENER_PID" >"$PID_FILE"
+  echo "Archivox is running on PID $LISTENER_PID"
   echo "Open: http://127.0.0.1:$PORT"
   exit 0
 fi
 
+rm -f "$PID_FILE"
 echo "Archivox is not running"

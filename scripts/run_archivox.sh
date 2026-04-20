@@ -2,12 +2,28 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-UV_BIN="${UV_BIN:-/opt/homebrew/bin/uv}"
+find_uv_bin() {
+  local candidates=(
+    "${UV_BIN:-}"
+    "$(command -v uv 2>/dev/null || true)"
+    "$HOME/.local/bin/uv"
+    "/opt/homebrew/bin/uv"
+    "/usr/local/bin/uv"
+  )
+  local candidate
+  for candidate in "${candidates[@]}"; do
+    if [[ -n "$candidate" && -x "$candidate" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
 
-if [[ ! -x "$UV_BIN" ]]; then
-  echo "uv binary not found at $UV_BIN" >&2
+UV_BIN="$(find_uv_bin)" || {
+  echo "uv binary not found. Install uv first or pass UV_BIN=/absolute/path/to/uv." >&2
   exit 1
-fi
+}
 
 cd "$ROOT_DIR"
 exec "$UV_BIN" run archivox
