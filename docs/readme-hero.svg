@@ -1,0 +1,57 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="160" y1="120" x2="1460" y2="780" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4F1E8"/>
+      <stop offset="1" stop-color="#E6E0D2"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1180" y2="620" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#123A3A"/>
+      <stop offset="1" stop-color="#0E2628"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="360" y2="360" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5FB8A6"/>
+      <stop offset="1" stop-color="#2F6F6F"/>
+    </linearGradient>
+    <filter id="blur" x="0" y="0" width="1600" height="900" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="50"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" rx="36" fill="url(#bg)"/>
+
+  <g opacity="0.75" filter="url(#blur)">
+    <circle cx="1310" cy="190" r="180" fill="#6CB8A8"/>
+    <circle cx="1160" cy="710" r="220" fill="#D0C6B5"/>
+    <circle cx="260" cy="180" r="150" fill="#E2D9CA"/>
+  </g>
+
+  <rect x="72" y="84" width="1456" height="732" rx="28" fill="#EFEAE0" stroke="#D7CEBF"/>
+  <rect x="124" y="136" width="1352" height="628" rx="28" fill="url(#panel)"/>
+
+  <rect x="176" y="188" width="210" height="46" rx="23" fill="#E8E0D0" fill-opacity="0.12" stroke="#E8E0D0" stroke-opacity="0.18"/>
+  <text x="281" y="218" text-anchor="middle" fill="#F4F1E8" font-family="Avenir, Helvetica, Arial, sans-serif" font-size="22" font-weight="600" letter-spacing="0.08em">LOCAL-FIRST</text>
+
+  <text x="176" y="356" fill="#F4F1E8" font-family="Avenir, Helvetica, Arial, sans-serif" font-size="104" font-weight="700" letter-spacing="-0.04em">Archivox</text>
+  <text x="176" y="430" fill="#BFD0C9" font-family="Avenir, Helvetica, Arial, sans-serif" font-size="34" font-weight="500">Transcription for long-form archives, courses, trainings,</text>
+  <text x="176" y="476" fill="#BFD0C9" font-family="Avenir, Helvetica, Arial, sans-serif" font-size="34" font-weight="500">and private media folders.</text>
+
+  <text x="176" y="578" fill="#F4F1E8" font-family="Avenir, Helvetica, Arial, sans-serif" font-size="28" font-weight="600">Folder in. Transcript out.</text>
+  <text x="176" y="620" fill="#9FB2AB" font-family="Avenir, Helvetica, Arial, sans-serif" font-size="24" font-weight="500">No cloud upload required. Resumable jobs. Overnight-ready.</text>
+
+  <rect x="978" y="202" width="360" height="360" rx="32" fill="url(#accent)"/>
+  <rect x="1034" y="258" width="248" height="248" rx="26" fill="#F5F0E7" fill-opacity="0.16" stroke="#F5F0E7" stroke-opacity="0.26"/>
+
+  <rect x="1090" y="312" width="136" height="18" rx="9" fill="#F7F2EA"/>
+  <rect x="1090" y="350" width="164" height="18" rx="9" fill="#F7F2EA" fill-opacity="0.82"/>
+  <rect x="1090" y="388" width="120" height="18" rx="9" fill="#F7F2EA" fill-opacity="0.66"/>
+  <rect x="1090" y="436" width="112" height="14" rx="7" fill="#D9F0E7" fill-opacity="0.92"/>
+  <rect x="1214" y="436" width="54" height="14" rx="7" fill="#D9F0E7" fill-opacity="0.52"/>
+
+  <rect x="978" y="594" width="360" height="96" rx="24" fill="#F3EEE4" fill-opacity="0.08" stroke="#F3EEE4" stroke-opacity="0.14"/>
+  <text x="1018" y="632" fill="#F4F1E8" font-family="Avenir, Helvetica, Arial, sans-serif" font-size="20" font-weight="600">Outputs</text>
+  <text x="1018" y="670" fill="#BED0C8" font-family="Avenir, Helvetica, Arial, sans-serif" font-size="22" font-weight="500">.transcript.txt   .transcript.srt   .transcript.json</text>
+
+  <rect x="176" y="686" width="262" height="26" rx="13" fill="#E7DED0" fill-opacity="0.12"/>
+  <rect x="448" y="686" width="232" height="26" rx="13" fill="#E7DED0" fill-opacity="0.08"/>
+  <rect x="690" y="686" width="194" height="26" rx="13" fill="#E7DED0" fill-opacity="0.06"/>
+</svg>
