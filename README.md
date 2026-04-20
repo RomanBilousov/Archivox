@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/readme-hero.svg" alt="Archivox hero" width="100%" />
+  <img src="docs/assets/app-screenshot.png" alt="Archivox interface" width="100%" />
 </p>
 
 <h1 align="center">Archivox</h1>
