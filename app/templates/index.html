@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ app_name }}</title>
+    {% if auto_refresh and auto_refresh_url %}
+    <meta http-equiv="refresh" content="5;url={{ auto_refresh_url }}">
+    {% endif %}
+    <link rel="icon" href="{{ url_for('static', path='/favicon.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+  </head>
+  <body>
+    <a href="#workspace" class="skip-link">Перейти к содержимому</a>
+    <main class="shell" id="workspace">
+      <header class="topbar">
+        <div class="topbar-copy">
+          <p class="eyebrow" translate="no">{{ app_name }}</p>
+          <h1>
+            {% if job_manifest and job_is_active %}
+            Идёт обработка
+            {% elif job_manifest %}
+            Запуск ждёт решения
+            {% elif scan_result %}
+            Папка готова к запуску
+            {% else %}
+            Выберите папку с видео
+            {% endif %}
+          </h1>
+          <p class="lede">
+            Archivox сохраняет результаты рядом с исходными файлами и помогает запускать обработку без лишних шагов.
+          </p>
+        </div>
+        {% if source_path %}
+        <form method="post" action="/open-path" class="topbar-actions">
+          <input type="hidden" name="target_path" value="{{ source_path }}">
+          <input type="hidden" name="source_path" value="{{ source_path }}">
+          {% if job_manifest %}
+          <input type="hidden" name="manifest_path" value="{{ job_manifest.manifest_path }}">
+          {% endif %}
+          <button type="submit" class="secondary">Открыть папку</button>
+        </form>
+        {% endif %}
+      </header>
+
+      {% if error %}
+      <section class="notice-banner error" aria-live="polite">
+        <p class="notice-kicker">Нужно ваше внимание</p>
+        <p>{{ error }}</p>
+      </section>
+      {% endif %}
+
+      {% if notice %}
+      <section class="notice-banner {{ notice_variant }}" aria-live="polite">
+        <p class="notice-kicker">{{ notice_title }}</p>
+        <p>{{ notice }}</p>
+      </section>
+      {% endif %}
+
+      {% if job_manifest %}
+      <section class="state-layout">
+        <article class="panel state-panel state-{{ job_manifest.view_mode }}" aria-live="polite">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Текущее состояние</p>
+              <h2>{{ job_manifest.view_heading }}</h2>
+              <p class="section-copy">{{ job_manifest.view_summary }}</p>
+            </div>
+            <div class="status-chip {% if job_is_active %}is-live{% elif job_manifest.view_mode == 'done' %}is-done{% elif job_manifest.view_mode == 'warning' %}is-warning{% else %}is-muted{% endif %}">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span>{{ job_manifest.status_label }}</span>
+            </div>
+          </div>
+
+          <div class="progress-cluster">
+            <div class="progress-copy">
+              <strong>{{ job_manifest.completed_files }} из {{ job_manifest.file_count }} видео готово</strong>
+              <span>{{ job_manifest.progress_pct }}%</span>
+            </div>
+            <div
+              class="progress-bar"
+              role="progressbar"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="{{ job_manifest.progress_pct }}"
+              aria-label="Прогресс обработки"
+            >
+              <span style="width: {{ job_manifest.progress_pct }}%"></span>
+            </div>
+          </div>
+
+          <div class="facts-grid">
+            <div class="fact-card fact-emphasis">
+              <span class="metric-label">{{ job_manifest.focus_label }}</span>
+              <strong class="metric-value">{{ job_manifest.focus_value }}</strong>
+            </div>
+            <div class="fact-card">
+              <span class="metric-label">Последнее изменение</span>
+              <strong class="metric-value">{{ job_manifest.updated_at_display or "Нет данных" }}</strong>
+            </div>
+            <div class="fact-card">
+              <span class="metric-label">Готово</span>
+              <strong class="metric-value">{{ job_manifest.completed_files }} из {{ job_manifest.file_count }}</strong>
+            </div>
+            <div class="fact-card">
+              <span class="metric-label">Режим</span>
+              <strong class="metric-value">{{ job_manifest.profile_label }}</strong>
+            </div>
+          </div>
+
+          {% if job_manifest.view_hint %}
+          <p class="progress-note">{{ job_manifest.view_hint }}</p>
+          {% endif %}
+        </article>
+
+        <aside class="panel action-panel">
+          <p class="eyebrow">{{ job_manifest.action_eyebrow }}</p>
+          <h2>{{ job_manifest.action_heading }}</h2>
+          <p class="section-copy">{{ job_manifest.action_summary }}</p>
+
+          <div class="action-stack">
+            {% if job_manifest.action_mode == "stop" %}
+            <form method="post" action="/jobs/stop">
+              <input type="hidden" name="manifest_path" value="{{ job_manifest.manifest_path }}">
+              <button type="submit">Остановить после текущего видео</button>
+            </form>
+            <form method="post" action="/open-path">
+              <input type="hidden" name="target_path" value="{{ job_manifest.source_root }}">
+              <input type="hidden" name="source_path" value="{{ source_path }}">
+              <input type="hidden" name="manifest_path" value="{{ job_manifest.manifest_path }}">
+              <button type="submit" class="secondary">Открыть папку с видео</button>
+            </form>
+            {% elif job_manifest.action_mode == "start" %}
+            <form method="post" action="/jobs/start" class="action-stack">
+              <input type="hidden" name="manifest_path" value="{{ job_manifest.manifest_path }}">
+              <label class="field">
+                <span>Когда начать</span>
+                <input type="datetime-local" name="scheduled_start_at" value="{{ scheduled_start_at }}" data-schedule-input>
+                <p class="hint">Если поле пустое, Archivox начнёт сразу. Если указать время, запуск начнётся позже.</p>
+              </label>
+              <button type="submit" data-start-submit>
+                {% if scheduled_start_at %}
+                Поставить в очередь
+                {% else %}
+                Запустить обработку
+                {% endif %}
+              </button>
+            </form>
+            <form method="post" action="/open-path">
+              <input type="hidden" name="target_path" value="{{ job_manifest.source_root }}">
+              <input type="hidden" name="source_path" value="{{ source_path }}">
+              <input type="hidden" name="manifest_path" value="{{ job_manifest.manifest_path }}">
+              <button type="submit" class="secondary">Открыть папку с видео</button>
+            </form>
+            <form method="post" action="/jobs/delete" class="subtle-action">
+              <input type="hidden" name="manifest_path" value="{{ job_manifest.manifest_path }}">
+              <button type="submit" class="ghost-danger small" onclick="return confirm('Удалить этот запуск? Готовые результаты рядом с видео останутся.')">Удалить запуск</button>
+            </form>
+            {% else %}
+            <form method="post" action="/open-path">
+              <input type="hidden" name="target_path" value="{{ job_manifest.source_root }}">
+              <input type="hidden" name="source_path" value="{{ source_path }}">
+              <input type="hidden" name="manifest_path" value="{{ job_manifest.manifest_path }}">
+              <button type="submit">Открыть папку с результатами</button>
+            </form>
+            {% endif %}
+          </div>
+
+          <details class="technical-details">
+            <summary>Служебные детали</summary>
+            <dl class="stats">
+              <div>
+                <dt>ID запуска</dt>
+                <dd><code>{{ job_manifest.job_id }}</code></dd>
+              </div>
+              <div>
+                <dt>Служебный файл</dt>
+                <dd><code>{{ job_manifest.manifest_path }}</code></dd>
+              </div>
+            </dl>
+          </details>
+        </aside>
+      </section>
+
+      <section class="post-state-stack">
+        <details class="panel drawer-panel">
+          <summary>Запустить другую папку</summary>
+          <div class="drawer-body">
+            <form method="post" action="/scan" class="stack">
+              <div class="field">
+                <label class="field-label" for="source_path">Папка с видео</label>
+                <div class="field-actions">
+                  <input
+                    id="source_path"
+                    type="text"
+                    name="source_path"
+                    value="{{ planner_source_path }}"
+                    placeholder="Например: /Volumes/MySSD/Courses/KnB…"
+                    autocomplete="off"
+                    spellcheck="false"
+                    required
+                  >
+                  <button type="button" class="secondary" data-pick-folder>Выбрать папку</button>
+                </div>
+                <p class="hint">Если видео лежат в подпапках, просто выберите их общую папку.</p>
+              </div>
+
+              <div class="settings-grid compact-settings">
+                <section class="setting-card">
+                  <div class="setting-copy">
+                    <strong>Искать внутри подпапок</strong>
+                    <p>Обычно лучше оставить включённым, чтобы Archivox нашёл всё сразу.</p>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" name="recursive" {% if recursive %}checked{% endif %}>
+                    <span class="switch-ui"></span>
+                  </label>
+                </section>
+
+                <label class="field compact setting-card">
+                  <span>Качество распознавания</span>
+                  <select name="profile">
+                    <option value="fast" {% if profile == 'fast' %}selected{% endif %}>Быстро</option>
+                    <option value="balanced" {% if profile == 'balanced' %}selected{% endif %}>Сбалансированно</option>
+                    <option value="best" {% if profile == 'best' %}selected{% endif %}>Максимально точно</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="actions actions-inline">
+                <button type="submit">Проверить папку</button>
+              </div>
+            </form>
+          </div>
+        </details>
+
+        <details class="panel drawer-panel">
+          <summary>Файлы в этом запуске</summary>
+          <div class="drawer-body">
+            <p class="muted">Первые {{ preview_files|length }} файлов для быстрой проверки.</p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Видео</th>
+                    <th>Длительность</th>
+                    <th>Размер</th>
+                    <th>Состояние</th>
+                    <th>Что получится</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for file in preview_files %}
+                  <tr>
+                    <td>{{ file.relative_path }}</td>
+                    <td class="table-num">{{ file.duration_human }}</td>
+                    <td class="table-num">{{ file.size_human }}</td>
+                    <td>{{ file.status_label }}</td>
+                    <td>{{ file.output_summary }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+
+        {% if history_jobs %}
+        <section class="panel history-panel">
+          <p class="eyebrow">Другие запуски</p>
+          <h2>Недавняя история</h2>
+          <div class="history-list">
+            {% for job in history_jobs %}
+            <article class="history-item {% if job.is_active %}is-live{% endif %}">
+              <div class="history-main">
+                <a href="/jobs/view?manifest_path={{ job.manifest_path | urlencode }}" class="history-title">{{ job.run_label }}</a>
+                <p class="history-meta">{{ job.status_label }} · {{ job.profile_label }} · {{ job.completed_files }} из {{ job.file_count }}</p>
+              </div>
+              <div class="table-actions">
+                <a href="/jobs/view?manifest_path={{ job.manifest_path | urlencode }}">Открыть</a>
+                {% if job.is_active or job.status in ["scheduled", "running", "stopping"] %}
+                <form method="post" action="/jobs/stop" class="inline-form">
+                  <input type="hidden" name="manifest_path" value="{{ job.manifest_path }}">
+                  <button type="submit" class="secondary small">Остановить</button>
+                </form>
+                {% else %}
+                <form method="post" action="/jobs/delete" class="inline-form">
+                  <input type="hidden" name="manifest_path" value="{{ job.manifest_path }}">
+                  <button type="submit" class="ghost-danger small" onclick="return confirm('Удалить этот запуск? Готовые результаты рядом с видео останутся.')">Удалить</button>
+                </form>
+                {% endif %}
+              </div>
+            </article>
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
+
+        <details class="panel soft-panel helper-drawer">
+          <summary>Что важно знать</summary>
+          <div class="helper-grid">
+            <div>
+              <p class="eyebrow">Результаты</p>
+              <ul class="info-list">
+                <li>Текст, субтитры и служебные данные сохраняются рядом с каждым видео.</li>
+                <li>Archivox пропускает файлы, которые уже полностью обработаны.</li>
+                <li>Служебная папка <code>.archivox</code> создаётся внутри выбранной директории.</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+      </section>
+      {% else %}
+      <section class="page-stack">
+        <article class="panel planner-panel">
+          <p class="eyebrow">Новый запуск</p>
+          <h2>{% if scan_result %}Проверьте папку перед запуском{% else %}Выберите папку с видео{% endif %}</h2>
+          <p class="section-copy">
+            Достаточно указать папку с файлами. Всё остальное Archivox оценит и подготовит сам.
+          </p>
+
+          <form method="post" action="/scan" class="stack">
+            <div class="field">
+              <label class="field-label" for="source_path">Папка с видео</label>
+              <div class="field-actions">
+                <input
+                  id="source_path"
+                  type="text"
+                  name="source_path"
+                  value="{{ planner_source_path }}"
+                  placeholder="Например: /Volumes/MySSD/Courses/KnB…"
+                  autocomplete="off"
+                  spellcheck="false"
+                  required
+                >
+                <button type="button" class="secondary" data-pick-folder>Выбрать папку</button>
+              </div>
+              <p class="hint">Если видео лежат в подпапках, просто выберите их общую папку.</p>
+            </div>
+
+            <div class="settings-grid">
+              <section class="setting-card">
+                <div class="setting-copy">
+                  <strong>Искать внутри подпапок</strong>
+                  <p>Обычно лучше оставить включённым, чтобы Archivox нашёл всё сразу.</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" name="recursive" {% if recursive %}checked{% endif %}>
+                  <span class="switch-ui"></span>
+                </label>
+              </section>
+
+              <label class="field compact setting-card">
+                <span>Качество распознавания</span>
+                <select name="profile">
+                  <option value="fast" {% if profile == 'fast' %}selected{% endif %}>Быстро</option>
+                  <option value="balanced" {% if profile == 'balanced' %}selected{% endif %}>Сбалансированно</option>
+                  <option value="best" {% if profile == 'best' %}selected{% endif %}>Максимально точно</option>
+                </select>
+                <p class="hint">Для больших запусков обычно достаточно режима “Сбалансированно”.</p>
+              </label>
+
+              <label class="field compact setting-card">
+                <span>Когда запустить</span>
+                <input type="datetime-local" name="scheduled_start_at" value="{{ planner_scheduled_start_at }}">
+                <p class="hint">Можно оставить пустым и просто сначала проверить папку.</p>
+              </label>
+            </div>
+
+            <div class="actions actions-inline">
+              <button type="submit">Проверить папку</button>
+            </div>
+          </form>
+
+          {% if scan_result %}
+          <p class="scan-summary">
+            Найдено {{ scan_result.file_count }} видео. Для новых файлов понадобится примерно {{ scan_result.estimated_runtime_human|lower }}.
+          </p>
+
+          <div class="facts-grid facts-grid-wide">
+            <div class="fact-card fact-emphasis">
+              <span class="metric-label">Видео найдено</span>
+              <strong class="metric-value">{{ scan_result.file_count }}</strong>
+              <span class="metric-note">{{ scan_result.pending_file_count }} ещё ждут обработки</span>
+            </div>
+            <div class="fact-card">
+              <span class="metric-label">Сколько осталось по времени</span>
+              <strong class="metric-value">{{ scan_result.pending_duration_human }}</strong>
+              <span class="metric-note">Общая длительность новых файлов</span>
+            </div>
+            <div class="fact-card">
+              <span class="metric-label">Примерное время работы</span>
+              <strong class="metric-value">{{ scan_result.estimated_runtime_human }}</strong>
+              <span class="metric-note">Оценка для выбранного режима</span>
+            </div>
+            <div class="fact-card">
+              <span class="metric-label">Общий размер</span>
+              <strong class="metric-value">{{ scan_result.total_size_human }}</strong>
+              <span class="metric-note">Все найденные файлы вместе</span>
+            </div>
+          </div>
+
+          <div class="path-box">
+            <div class="path-head">
+              <span class="metric-label">Выбрана папка</span>
+              <form method="post" action="/open-path" class="inline-form">
+                <input type="hidden" name="target_path" value="{{ scan_result.source_root }}">
+                <input type="hidden" name="source_path" value="{{ source_path }}">
+                <button type="submit" class="secondary small">Открыть в Finder</button>
+              </form>
+            </div>
+            <code>{{ scan_result.source_root }}</code>
+          </div>
+
+          <form method="post" action="/jobs" class="stack top-gap">
+            <input type="hidden" name="source_path" value="{{ source_path }}">
+            {% if recursive %}
+            <input type="hidden" name="recursive" value="on">
+            {% endif %}
+            <input type="hidden" name="profile" value="{{ profile }}">
+            <input type="hidden" name="scheduled_start_at" value="{{ scheduled_start_at }}">
+            <div class="actions actions-inline">
+              <button type="submit">Подготовить запуск</button>
+            </div>
+          </form>
+
+          <details class="drawer top-gap">
+            <summary>Показать список файлов</summary>
+            <div class="drawer-body">
+              <p class="muted">Первые {{ preview_files|length }} файлов для быстрой проверки.</p>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Видео</th>
+                      <th>Длительность</th>
+                      <th>Размер</th>
+                      <th>Состояние</th>
+                      <th>Что получится</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for file in preview_files %}
+                    <tr>
+                      <td>{{ file.relative_path }}</td>
+                      <td class="table-num">{{ file.duration_human }}</td>
+                      <td class="table-num">{{ file.size_human }}</td>
+                      <td>{{ file.status_label }}</td>
+                      <td>{{ file.output_summary }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+          {% endif %}
+        </article>
+
+        <section class="support-grid{% if not history_jobs %} support-grid-single{% endif %}">
+          {% if history_jobs %}
+          <section class="panel history-panel">
+            <p class="eyebrow">История</p>
+            <h2>Последние запуски</h2>
+            <div class="history-list">
+              {% for job in history_jobs %}
+              <article class="history-item {% if job.is_active %}is-live{% endif %}">
+                <div class="history-main">
+                  <a href="/jobs/view?manifest_path={{ job.manifest_path | urlencode }}" class="history-title">{{ job.run_label }}</a>
+                  <p class="history-meta">{{ job.status_label }} · {{ job.profile_label }} · {{ job.completed_files }} из {{ job.file_count }}</p>
+                </div>
+                <div class="table-actions">
+                  <a href="/jobs/view?manifest_path={{ job.manifest_path | urlencode }}">Открыть</a>
+                  {% if job.is_active or job.status in ["scheduled", "running", "stopping"] %}
+                  <form method="post" action="/jobs/stop" class="inline-form">
+                    <input type="hidden" name="manifest_path" value="{{ job.manifest_path }}">
+                    <button type="submit" class="secondary small">Остановить</button>
+                  </form>
+                  {% else %}
+                  <form method="post" action="/jobs/delete" class="inline-form">
+                    <input type="hidden" name="manifest_path" value="{{ job.manifest_path }}">
+                    <button type="submit" class="ghost-danger small" onclick="return confirm('Удалить этот запуск? Готовые результаты рядом с видео останутся.')">Удалить</button>
+                  </form>
+                  {% endif %}
+                </div>
+              </article>
+              {% endfor %}
+            </div>
+          </section>
+          {% endif %}
+
+          <details class="panel soft-panel helper-drawer" {% if not history_jobs %}open{% endif %}>
+            <summary>Что важно знать</summary>
+            <div class="helper-grid">
+              <div>
+                <p class="eyebrow">Результаты</p>
+                <ul class="info-list">
+                  <li>Текст, субтитры и служебные данные сохраняются рядом с каждым видео.</li>
+                  <li>Archivox пропускает файлы, которые уже полностью обработаны.</li>
+                  <li>Служебная папка <code>.archivox</code> создаётся внутри выбранной директории.</li>
+                </ul>
+              </div>
+              <div>
+                <p class="eyebrow">Как пользоваться</p>
+                <ol class="steps-list">
+                  <li>Выберите папку и нажмите “Проверить папку”.</li>
+                  <li>Посмотрите, сколько видео найдено и сколько времени займёт работа.</li>
+                  <li>Подготовьте запуск и стартуйте сразу или позже.</li>
+                </ol>
+              </div>
+            </div>
+          </details>
+        </section>
+      </section>
+      {% endif %}
+    </main>
+    <script>
+    (() => {
+      const pickButton = document.querySelector("[data-pick-folder]");
+      const sourceInput = document.querySelector('input[name="source_path"]');
+      if (!pickButton || !sourceInput) return;
+
+      pickButton.addEventListener("click", async () => {
+        pickButton.disabled = true;
+        const originalLabel = pickButton.textContent;
+        pickButton.textContent = "Открываем…";
+
+        try {
+          const form = new URLSearchParams();
+          form.set("source_path", sourceInput.value || "");
+
+          const response = await fetch("/pick-folder", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+            },
+            body: form.toString(),
+          });
+
+          const payload = await response.json();
+          if (!response.ok || !payload.ok) {
+            throw new Error(payload.error || "Не удалось выбрать папку.");
+          }
+
+          sourceInput.value = payload.source_path;
+        } catch (error) {
+          window.alert(error.message || "Не удалось выбрать папку.");
+        } finally {
+          pickButton.disabled = false;
+          pickButton.textContent = originalLabel;
+        }
+      });
+
+      const scheduleInput = document.querySelector("[data-schedule-input]");
+      const startButton = document.querySelector("[data-start-submit]");
+      if (scheduleInput && startButton) {
+        const syncStartButton = () => {
+          startButton.textContent = scheduleInput.value ? "Поставить в очередь" : "Запустить обработку";
+        };
+
+        scheduleInput.addEventListener("input", syncStartButton);
+        syncStartButton();
+      }
+    })();
+    </script>
+  </body>
+</html>
