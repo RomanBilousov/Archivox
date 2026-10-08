@@ -1,3 +1,7 @@
+[Русский README](README.md)
+
+> This English README is preserved for external readers. Commands and project structure below were checked against the repository at source commit `20ad4694a3befe831e891e7f1e23e9e8200cbb56`; runtime, external services, and installer behavior still require fresh verification before use.
+
 <p align="center">
   <img src="docs/assets/app-screenshot.png" alt="Archivox interface" width="100%" />
 </p>
@@ -41,20 +45,19 @@ wants a clean `folder in, transcript out` workflow.
 
 ## One-command install
 
-Install Archivox, set up dependencies, start the local web app, and open it in
-your browser:
+Before piping any remote installer to a shell, inspect the current `scripts/install.sh` and verify the source revision.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/RomanBilousov/Archivox/main/scripts/install.sh | bash
 ```
 
-What this does:
+What the repository documents this installer to do:
 
-- installs `uv` if it is missing
-- clones or updates the repo in a local app directory
-- runs `uv sync`
-- starts Archivox in the background
-- opens `http://127.0.0.1:8420`
+- install `uv` if it is missing
+- clone or update the repo in a local app directory
+- run `uv sync`
+- start Archivox in the background
+- open `http://127.0.0.1:8420`
 
 <details>
 <summary>Install variants</summary>
@@ -220,10 +223,10 @@ run the installer again so the launcher and LaunchAgent point to the new path.
 
 ```text
 Archivox/
-├── app/                     # web app, job planning, transcription runtime
-├── docs/                    # product and architecture notes
-├── ops/macos/               # LaunchAgent template
-├── scripts/                 # local start/stop/install helpers
+├── app/
+├── docs/
+├── ops/macos/
+├── scripts/
 ├── pyproject.toml
 └── README.md
 ```
@@ -233,7 +236,7 @@ Archivox/
 - transcript files are written next to the source media, not into a separate export folder
 - hidden runtime metadata stays inside `.archivox/`
 - this repository contains application code and helper scripts, not private media or runtime jobs
-- logs live in `/tmp/archivox-web.out.log` and `/tmp/archivox-web.err.log`
+- logs are documented under `/tmp/archivox-web.out.log` and `/tmp/archivox-web.err.log`
 
 If the repository stays inside `Documents`, macOS privacy rules may block the
 LaunchAgent from starting reliably. In that case, prefer the background scripts
